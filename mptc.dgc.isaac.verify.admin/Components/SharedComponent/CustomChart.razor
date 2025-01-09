@@ -1,0 +1,44 @@
+<MudChart ChartType="@ChartType"
+          ChartSeries="@ChartSeries"
+          @bind-SelectedIndex="@SelectedIndex"
+          XAxisLabels="@XAxisLabels"
+          Width="@Width"
+          Height="@Height"
+          ChartOptions="@ChartOptions" />
+
+@code {
+    [Parameter]
+    public ChartType ChartType { get; set; } = ChartType.Line;
+
+    [Parameter]
+    public List<ChartSeries> ChartSeries { get; set; } = new List<ChartSeries>();
+
+    [Parameter]
+    public string[] XAxisLabels { get; set; } = Array.Empty<string>();
+
+    [Parameter]
+    public string Width { get; set; } = "100%";
+
+    [Parameter]
+    public string Height { get; set; } = "350px";
+
+    [Parameter]
+    public ChartOptions ChartOptions { get; set; } = new ChartOptions();
+
+    private int selectedIndex = -1;
+    public int SelectedIndex
+    {
+        get => selectedIndex;
+        set
+        {
+            if (selectedIndex != value)
+            {
+                selectedIndex = value;
+                SelectedIndexChanged.InvokeAsync(value);
+            }
+        }
+    }
+
+    [Parameter]
+    public EventCallback<int> SelectedIndexChanged { get; set; }
+}

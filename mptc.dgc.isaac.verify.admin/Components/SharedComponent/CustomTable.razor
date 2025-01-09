@@ -1,0 +1,23 @@
+@typeparam T
+@using MudBlazor
+
+<MudTable Outlined="true" Items="@Items" Hover="true" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        @Header
+    </HeaderContent>
+    <RowTemplate>
+        @Content!(context)
+    </RowTemplate>
+    <NoRecordsContent>
+        <p>No Data</p>
+    </NoRecordsContent>
+</MudTable>
+
+@code {
+    [Parameter]
+    public IEnumerable<T>? Items { get; set; }
+    [Parameter]
+    public RenderFragment? Header { get; set; }
+    [Parameter]
+    public RenderFragment<T>? Content { get; set; }
+}

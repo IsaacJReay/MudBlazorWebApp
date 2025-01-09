@@ -1,0 +1,121 @@
+@page "/todo/createoredit/{Id:int?}";
+
+@using mptc.dgc.isaac.verify.service.Services;
+@using mptc.dgc.isaac.verify.service.Dtos.Todo;
+@using mptc.dgc.isaac.verify.service.Services.TodoService;
+
+
+@inject ITodoService TodoService;
+@inject NavigationManager NavigationManager
+@inject SanitizationService SanitizationService
+
+<CustomBreadcrumbs Items="Items"></CustomBreadcrumbs>
+<EditForm Model="TodoItem" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <CustomPaper>
+        <CustomCard>
+            <CardHeader>
+                @if (Id.HasValue)
+                {
+                    <h3>Edit Todo</h3>
+                }
+                else
+                {
+                    <h3>Create</h3>
+                }
+                <MudSpacer />
+                <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="HandleBack" Class="px-10"
+                           style="margin-right: 4px;">Cancel</MudButton>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="px-10"
+                           style="margin-right: 4px;">
+                    @((Id.HasValue) ? "Update" : "Create")
+                </MudButton>
+            </CardHeader>
+            <CardContent>
+                <MudTextField Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="TodoItem.Title"
+                              For="@(() => TodoItem.Title)" Label="Title" />
+                <MudTextField Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="TodoItem.Description"
+                              For="@(() => TodoItem.Description)" Label="Description" />
+                <MudSwitch @bind-Value="TodoItem.IsCompleted" Label="Completed" />
+
+            </CardContent>
+            <CardAction>
+                <MudButton Variant="Variant.Filled" Color="Color.Default" Class="px-10" OnClick="HandleBack"
+                           style="margin-right: 4px;">"Cancel"</MudButton>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="px-10"
+                           style="margin-right: 4px;"> @((Id.HasValue) ? "Update" : "Create")</MudButton>
+            </CardAction>
+        </CustomCard>
+    </CustomPaper>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+    private List<BreadcrumbItem> Items = new List<BreadcrumbItem> {
+        new BreadcrumbItem("Todo List", "/todo-list"),
+        new BreadcrumbItem("Todo Detail","",disabled:true)
+        };
+    private TodoDto TodoItem { get; set; } = new TodoDto();
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            TodoItem = await TodoService.GetByIdAsync(Id.Value);
+        }
+    }
+
+    private void HandleBack()
+    {
+        NavigationManager.NavigateTo("/todo-list");
+    }
+    private async Task HandleSubmit()
+    {
+        if (Id.HasValue)
+        {
+            await UpdateTodoAsync();
+        }
+        else
+        {
+            await AddTodoAsync();
+        }
+    }
+
+    private async Task AddTodoAsync()
+    {
+        TodoItem.Sanitize();
+        try
+        {
+            var createdTodo = await TodoService.CreateTransactionAsync(TodoItem);
+            if (createdTodo != null)
+            {
+                NavigationManager.NavigateTo("/todo-list");
+                //Snackbar.Add("Save Success!", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            //Snackbar.Add(ex.Message, Severity.Success);
+        }
+    }
+    private async Task UpdateTodoAsync()
+    {
+        TodoItem.Sanitize();
+        try
+        {
+            var updatedTodo = await TodoService.UpdateAsync(TodoItem);
+            if (updatedTodo)
+            {
+                // Snackbar.Add("Update Success!", Severity.Success);
+                //NavigationManager.NavigateTo("/todo-list");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+        }
+    }
+}

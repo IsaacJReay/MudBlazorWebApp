@@ -1,0 +1,337 @@
+@page "/todo-list"
+
+@using mptc.dgc.isaac.verify.admin.Services.ExcelExport;
+@using mptc.dgc.isaac.verify.service.Services;
+@using mptc.dgc.isaac.verify.service.Dtos.Todo;
+@using mptc.dgc.isaac.verify.service.Dtos.Commons;
+@using mptc.dgc.isaac.verify.service.Services.TodoService;
+@using System.Text.Json;
+
+@inject ITodoService TodoService
+@inject SanitizationService SanitizationService
+@inject NavigationManager NavigationManager
+@inject IServiceProvider ServiceProvider
+@inject IJSRuntime JSRuntime
+@inject IExcelExportStrategy<TodoDto> _exportStrategy;
+
+
+<PageTitle>Delete</PageTitle>
+
+<CustomStack Style="padding: 0px;">
+    <CustomBreadcrumbs Items="new List<BreadcrumbItem>{}"></CustomBreadcrumbs>
+</CustomStack>
+<CustomPaper>
+    <CustomStack StretchItems="StretchItems.Start">
+        <div>
+            <MudTextField IconSize="Size.Small" @bind-Value="todoDtoFilterDto!.SearchText" T="string"
+                          Margin="Margin.Dense" DebounceInterval="500" Label="Search" Variant="Variant.Outlined"
+                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" />
+        </div>
+        <div class="dgg-space-btn-icon">
+            <MudButton Size="Size.Small" Variant="Variant.Filled" style="margin-right: 4px;"
+                       OnClick="OnSearchTextChanged" Color="Color.Primary">
+                <MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.ManageSearch" />
+            </MudButton>
+            <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" style="margin-right: 4px;"
+                       OnClick="async () => isAddDialogOpen = true">
+                <MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Add" /> Add New
+            </MudButton>
+            <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" style="margin-right: 4px;"
+                       OnClick="OnCreateNavigation">
+                <MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Add" /> Add New Page
+            </MudButton>
+
+            <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" style="margin-right: 4px;"
+                       OnClick="ExportSalesReport">
+                <MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Add" /> Export Excel
+            </MudButton>
+
+            @if (selectedTodos.Any())
+            {
+                <MudButton OnClick="DeleteSelectedTodosAsync" Size="Size.Small" Variant="Variant.Filled" Color="Color.Error"
+                           style="margin-right: 4px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" />
+                </MudButton>
+            }
+        </div>
+    </CustomStack>
+
+    <MudTable Dense="true" class="dgc-table-style" Elevation="0" Items="@Todos" MultiSelection="true"
+              Pager="@paginationFilterDto.PageNumber" RowsPerPage="@paginationFilterDto.PageSize" Loading="@isLoading"
+              Breakpoint="Breakpoint.Sm"
+              SelectedItemsChanged="EventCallback.Factory.Create<HashSet<TodoDto>>(this, OnSelectedItemsChanged)">
+        <HeaderContent>
+            <MudTh>#</MudTh>
+            <MudTh>Title</MudTh>
+            <MudTh>Description</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Created At</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+
+        <RowTemplate>
+            <MudTd>@(Todos.IndexOf(context) + 1)</MudTd>
+            <MudTd>@context.Title</MudTd>
+            <MudTd>@context.Description</MudTd>
+            <MudTd>@context.IsCompleted</MudTd>
+            <MudTd>@context.CreatedAt</MudTd>
+            <MudTd>
+                <MudIconButton Color="Color.Primary" Icon="@Icons.Material.Filled.Edit"
+                               OnClick="async () => EditTodoAsync(context)" Variant="Variant.Outlined">Edit</MudIconButton>
+                <MudIconButton Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Variant="Variant.Outlined"
+                               OnClick="async ()=> DeleteTodo(context)">Delete</MudIconButton>
+                <MudIconButton Color="Color.Primary" Icon="@Icons.Material.Filled.Visibility"
+                               OnClick="() => OnViewDetail(context.Id)" Variant="Variant.Outlined">View</MudIconButton>
+                <MudIconButton Color="Color.Primary" Icon="@Icons.Material.Filled.NavigateNext"
+                               OnClick="() => OnEditNewPage(context.Id)" Variant="Variant.Outlined">Edit Page</MudIconButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    <MudGrid>
+        <MudItem md="12" class="mt-2 mb-2" Style="text-align: center;">
+            <MudPagination SelectedChanged="OnPageChanged" Count="@totalPages" />
+        </MudItem>
+    </MudGrid>
+
+    <CustomDialog Title="Add Todo"
+                  ConfirmButtonText="Add"
+                  IsDialogOpen="@isAddDialogOpen"
+                  OnConfirm="AddTodoAsync"
+                  OnCancel="OnCloseDialog">
+        <MudTextField Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="newTodo.Title" Label="Title"
+                      Required="true" />
+        <MudTextField Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="newTodo.Description"
+                      Label="Description" Required="true" />
+        <MudSwitch @bind-Value="newTodo.IsCompleted" Label="Completed" />
+    </CustomDialog>
+
+
+    <CustomDialog Title="Update"
+                  ConfirmButtonText="Update"
+                  IsDialogOpen="@isEditDialogOpen"
+                  OnConfirm="UpdateTodoAsync"
+                  OnCancel="OnCloseDialog">
+        <MudTextField Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="selectedTodo.Title" Label="Title"
+                      Required="true" />
+        <MudTextField Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="selectedTodo.Description"
+                      Label="Description" Required="true" />
+        <MudSwitch @bind-Value="selectedTodo.IsCompleted" Label="Completed" />
+    </CustomDialog>
+
+    <CustomConfirmDialog Title="Delete Todo"
+                         SubTitle="Are you sure you want to delete the selected item?"
+                         ConfirmButtonText="Yes"
+                         IsConfirmDialogOpen="@isDeleteDialogOpen"
+                         OnConfirm="DeleteTodoAsync"
+                         OnCancel="OnCloseDialog" />
+
+</CustomPaper>
+@code {
+    private List<TodoDto> Todos = new List<TodoDto>();
+    private TodoDtoFilterDto? todoDtoFilterDto { get; set; } = new TodoDtoFilterDto();
+    private List<TodoDto> selectedTodos = new List<TodoDto>();
+    private TodoDto newTodo = new TodoDto();
+    private TodoDto selectedTodo = new TodoDto();
+    private bool isAddDialogOpen = false;
+    private bool isEditDialogOpen = false;
+    private bool isDeleteDialogOpen = false;
+    private bool isLoading = false;
+    PaginationFilterDto paginationFilterDto { get; set; } = new PaginationFilterDto()
+    {
+        PageNumber = 1,
+        PageSize = 10
+    };
+    private int totalPages = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTodosAsync(paginationFilterDto);
+    }
+
+    private async Task OnSearchTextChanged()
+    {
+        await LoadTodosAsync(paginationFilterDto);
+    }
+
+    private async Task OnPageChanged(int page)
+    {
+        paginationFilterDto.PageNumber = page;
+        await LoadTodosAsync(paginationFilterDto);
+
+    }
+
+    private void OnEditNewPage(int id)
+    {
+        NavigationManager.NavigateTo($"/todo/createoredit/{id}");
+    }
+
+    private void DeleteTodo(TodoDto todo)
+    {
+        Console.WriteLine($"Delete Todo: {todo.Title}");
+        selectedTodo = todo;
+        isDeleteDialogOpen = true;
+    }
+    private async Task LoadTodosAsync(PaginationFilterDto paginationFilterDto)
+    {
+        isLoading = true;
+        try
+        {
+            var result = await TodoService.GetPagedAsync(paginationFilterDto, todoDtoFilterDto);
+            if (result != null)
+            {
+                Todos = result.Data.ToList();
+                totalPages = result.TotalPages;
+                paginationFilterDto.PageNumber = result.PageNumber;
+                paginationFilterDto.PageSize = result.PageSize;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OnViewDetail(int Id)
+    {
+        NavigationManager.NavigateTo($"/todo/detail/{Id}");
+    }
+    private void OnCreateNavigation()
+    {
+        NavigationManager.NavigateTo($"/todo/createoredit");
+    }
+    private void OnSelectedItemsChanged(HashSet<TodoDto> items)
+    {
+        selectedTodos = items.ToList();
+        string jsonString = JsonSerializer.Serialize(selectedTodos);
+        Console.WriteLine($"Selected Items: {jsonString}");
+    }
+    private async Task AddTodoAsync()
+    {
+        newTodo.Sanitize();
+        if (!string.IsNullOrWhiteSpace(newTodo.Description))
+        {
+            newTodo.Description = SanitizationService.Sanitize(newTodo.Description);
+            newTodo.Title = SanitizationService.Sanitize(newTodo.Title);
+            isLoading = true;
+            try
+            {
+                var createdTodo = await TodoService.CreateTransactionAsync(newTodo);
+                if (createdTodo != null)
+                {
+                    Todos.Add(createdTodo);
+                    newTodo = new TodoDto(); // Reset the form
+                    isAddDialogOpen = false;
+                }
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+                isLoading = false;
+            }
+        }
+    }
+
+    private void EditTodoAsync(TodoDto todo)
+    {
+        selectedTodo = todo;
+        isEditDialogOpen = true;
+    }
+
+    private async Task UpdateTodoAsync()
+    {
+        if (selectedTodo != null)
+        {
+            isLoading = true;
+            selectedTodo.Sanitize();
+            try
+            {
+                var updatedTodo = await TodoService.UpdateAsync(selectedTodo);
+                if (updatedTodo)
+                {
+                    var todoToUpdate = Todos.FirstOrDefault(t => t.Id == selectedTodo.Id);
+                    if (todoToUpdate != null)
+                    {
+                        todoToUpdate.Title = selectedTodo.Title;
+                        todoToUpdate.Description = selectedTodo.Description;
+                        todoToUpdate.IsCompleted = selectedTodo.IsCompleted;
+                        isEditDialogOpen = false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            finally
+            {
+                isLoading = false;
+            }
+        }
+    }
+
+    private async Task DeleteTodoAsync()
+    {
+
+        if (selectedTodo != null)
+        {
+            isLoading = true;
+            try
+            {
+                var deletedTodo = await TodoService.DeleteAsync(selectedTodo.Id);
+                if (deletedTodo)
+                {
+                    Todos.Remove(selectedTodo);
+                    isEditDialogOpen = false;
+                    isDeleteDialogOpen = false;
+                    //Snackbar.Add("Todo deleted successfully", Severity.Success);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                isDeleteDialogOpen = false;
+                //Snackbar.Add("Something went wrong!", Severity.Error);
+            }
+            finally
+            {
+                isLoading = false;
+            }
+        }
+        else
+        {
+            //Snackbar.Add("Todo not found!", Severity.Error);
+        }
+    }
+    private async Task DeleteSelectedTodosAsync()
+    {
+        if (selectedTodos.Any())
+        {
+            //Snackbar.Add(JsonSerializer.Serialize(selectedTodos), Severity.Error);
+        }
+    }
+
+    private void OnCloseDialog()
+    {
+        isAddDialogOpen = false;
+        isEditDialogOpen = false;
+        isDeleteDialogOpen = false;
+    }
+
+    private async Task ExportSalesReport()
+    {
+        var data = await TodoService.GetPagedAsync(paginationFilterDto, todoDtoFilterDto);
+        var resultList = data.Data.ToList();
+
+        using var stream = await _exportStrategy.ExportAsync(resultList);
+        var base64Data = Convert.ToBase64String(stream.ToArray());
+
+        await JSRuntime.InvokeVoidAsync("saveAsFile", "TodoList.xlsx", base64Data);
+    }
+}

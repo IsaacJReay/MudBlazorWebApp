@@ -1,0 +1,31 @@
+<MudDialog @bind-Visible="IsDialogOpen" Options="DialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> @Title
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @ChildContent
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnConfirm" Class="px-10">@ConfirmButtonText</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="OnCancel"Class="px-10">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "";
+    [Parameter]
+    public string ConfirmButtonText { get; set; } = "Save";
+    private readonly DialogOptions DialogOptions = new() { FullWidth = true,BackdropClick = false };
+    [Parameter]
+    public bool IsDialogOpen { get; set; } = false;
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+}

@@ -6,8 +6,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'https' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'http' " />
   <ItemGroup>
     <PackageReference Include="MudBlazor" Version="7.15.0" />
+    <PackageReference Include="EPPlus" Version="7.5.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\mptc.dgc.isaac.verify.service\mptc.dgc.isaac.verify.service.csproj">
+      <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
+    </ProjectReference>
+  </ItemGroup>
 </Project>

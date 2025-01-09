@@ -1,0 +1,13 @@
+<MudStack StretchItems="@StretchItems" Row style="@Style">
+    @ChildContent
+</MudStack>
+
+@code {
+    [Parameter]
+    public StretchItems StretchItems { get; set; } = StretchItems.Start;
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; } = default!;
+    [Parameter]
+    public string Style { get; set; } = "padding: 24px;";
+}

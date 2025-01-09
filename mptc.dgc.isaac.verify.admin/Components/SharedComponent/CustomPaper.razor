@@ -1,0 +1,10 @@
+<MudPaper @onclick="OnClick" class="dgc-paper-bg">
+    @ChildContent
+</MudPaper>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+    [Parameter]
+    public EventCallback  OnClick{get;set;}
+}

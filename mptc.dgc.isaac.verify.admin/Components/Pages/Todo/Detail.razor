@@ -1,0 +1,25 @@
+@page "/todo/detail/{Id:int}";
+
+<CustomBreadcrumbs Items="Items"></CustomBreadcrumbs>
+<CustomPaper>
+    <CustomCard>
+        <CardHeader>
+            Todo Detail
+        </CardHeader>
+        <CardContent>
+            <p>Id: @Id</p>
+            <p>Content: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla nec purus feugiat, molestie ipsum
+                et, varius velit. Donec ut tincidunt libero. Nulla facilisi</p>
+        </CardContent>
+    </CustomCard>
+</CustomPaper>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private List<BreadcrumbItem> Items = new List<BreadcrumbItem> {
+        new BreadcrumbItem("Todo List", "/todo-list"),
+        new BreadcrumbItem("Todo Detail","",disabled:true)
+        };
+}

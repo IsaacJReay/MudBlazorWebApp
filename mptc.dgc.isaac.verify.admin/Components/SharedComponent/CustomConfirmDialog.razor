@@ -1,0 +1,29 @@
+<MudDialog @bind-Visible="IsConfirmDialogOpen" Options="DialogOptions">
+     <TitleContent>
+            <MudText Typo="Typo.h6">@Title : @IsConfirmDialogOpen</MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudText>@SubTitle</MudText>
+        </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnConfirm" Class="px-10">@ConfirmButtonText</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="OnCancel"Class="px-10">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "Confirm Dialog";
+    [Parameter]
+    public string SubTitle { get; set; } = "Are you sure you want to delete this item?";
+    [Parameter]
+    public string ConfirmButtonText { get; set; } = "Confirm";
+    private readonly DialogOptions DialogOptions = new() { FullWidth = true,BackdropClick = false };
+    [Parameter]
+    public bool IsConfirmDialogOpen { get; set; } = false;
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+        [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+}

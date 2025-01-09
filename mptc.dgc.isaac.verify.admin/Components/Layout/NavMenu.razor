@@ -1,0 +1,20 @@
+﻿<MudDrawerHeader>
+    <MudGrid Class="d-flex flex-grow-1 gap-4">
+        <MudItem xs="12">
+            <MudImage Class="flex-1 d-flex rounded-lg" Src="favicon.png" Alt="Favico" Elevation="25" />
+        </MudItem>
+        <MudFlexBreak />
+        <MudItem xs="12">
+            <MudText Class="flex-1 d-flex" Typo="Typo.h6">My App</MudText>
+        </MudItem>
+    </MudGrid>
+</MudDrawerHeader>
+<MudNavMenu>
+    <MudNavLink Href="/" Match="NavLinkMatch.All">Dashboard</MudNavLink>
+    <MudNavLink Href="/servers" Match="NavLinkMatch.Prefix">Servers</MudNavLink>
+    <MudNavGroup Title="Settings" Expanded="true">
+        <MudNavLink Href="/users" Match="NavLinkMatch.Prefix">Users</MudNavLink>
+        <MudNavLink Href="/security" Match="NavLinkMatch.Prefix">Security</MudNavLink>
+    </MudNavGroup>
+    <MudNavLink Href="/about" Match="NavLinkMatch.Prefix">About</MudNavLink>
+</MudNavMenu>
